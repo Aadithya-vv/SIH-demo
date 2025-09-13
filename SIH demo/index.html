@@ -1,83 +1,154 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Crop Recommendation Prototype</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Crop Recommendation</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 40px; }
-    .card { border: 1px solid #ccc; padding: 20px; border-radius: 8px; margin: 10px 0; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f8f2;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #2c662d;
+    }
+    form {
+      max-width: 400px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 10px;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      margin-top: 15px;
+      width: 100%;
+      padding: 10px;
+      background: #2c662d;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #245422;
+    }
+    .result {
+      max-width: 500px;
+      margin: 20px auto;
+      padding: 15px;
+      border-radius: 10px;
+      background: #eafbe7;
+      border: 1px solid #c3e6cb;
+      display: none;
+    }
+    .result h3 {
+      margin-top: 0;
+      color: #155724;
+    }
+    .crop {
+      display: inline-block;
+      padding: 8px 12px;
+      margin: 5px;
+      background: #d4edda;
+      border-radius: 8px;
+      font-weight: bold;
+      color: #155724;
+    }
   </style>
 </head>
 <body>
-  <h1>🌾 AI-based Crop Recommendation</h1>
+  <h1>🌱 AI Crop Recommendation System</h1>
 
   <form id="cropForm">
-    <label>Soil Type:
-      <select id="soil_type">
-        <option>Loamy</option>
-        <option>Clay</option>
-        <option>Sandy</option>
-        <option>Sandy Loam</option>
-      </select>
-    </label><br><br>
+    <label for="soil_type">Soil Type</label>
+    <select id="soil_type" required>
+      <option value="Loamy">Loamy</option>
+      <option value="Clay">Clay</option>
+      <option value="Sandy">Sandy</option>
+      <option value="Sandy Loam">Sandy Loam</option>
+    </select>
 
-    <label>Rainfall (mm): <input type="number" id="rainfall" required></label><br><br>
-    <label>Soil pH: <input type="number" step="0.1" id="ph" required></label><br><br>
-    <label>Season:
-      <select id="season">
-        <option>Kharif</option>
-        <option>Rabi</option>
-      </select>
-    </label><br><br>
+    <label for="rainfall">Rainfall (mm)</label>
+    <input type="number" id="rainfall" step="0.1" required />
+
+    <label for="ph">Soil pH</label>
+    <input type="number" id="ph" step="0.1" required />
+
+    <label for="season">Season</label>
+    <select id="season" required>
+      <option value="Kharif">Kharif</option>
+      <option value="Rabi">Rabi</option>
+    </select>
 
     <button type="submit">Get Recommendation</button>
   </form>
 
-  <div id="result"></div>
+  <div class="result" id="resultBox">
+    <h3>Recommended Crops</h3>
+    <div id="crops"></div>
+    <p id="reason"></p>
+  </div>
 
-<script>
-  document.getElementById("cropForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
+  <script>
+    document.getElementById("cropForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
 
-    const data = {
-      soil_type: document.getElementById("soil_type").value,
-      rainfall: parseFloat(document.getElementById("rainfall").value),
-      ph: parseFloat(document.getElementById("ph").value),
-      season: document.getElementById("season").value
-    };
+      const data = {
+        soil_type: document.getElementById("soil_type").value,
+        rainfall: parseFloat(document.getElementById("rainfall").value),
+        ph: parseFloat(document.getElementById("ph").value),
+        season: document.getElementById("season").value
+      };
 
-    try {
-      const res = await fetch("http://127.0.0.1:8000/recommend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
+      try {
+        const response = await fetch("http://127.0.0.1:8000/recommend", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
 
-      if (!res.ok) {
-        throw new Error(`Server error: ${res.status}`);
+        const result = await response.json();
+        const cropsDiv = document.getElementById("crops");
+        const reasonP = document.getElementById("reason");
+        const resultBox = document.getElementById("resultBox");
+
+        cropsDiv.innerHTML = "";
+        reasonP.innerHTML = "";
+
+        if (result.recommended_crops) {
+          result.recommended_crops.forEach(crop => {
+            let span = document.createElement("span");
+            span.className = "crop";
+            span.innerText = "🌾 " + crop;
+            cropsDiv.appendChild(span);
+          });
+          reasonP.innerText = result.reason;
+        } else if (result.message) {
+          reasonP.innerText = result.message;
+        } else if (result.error) {
+          reasonP.innerText = "⚠️ " + result.error;
+        }
+
+        resultBox.style.display = "block";
+      } catch (error) {
+        alert("Error connecting to backend: " + error);
       }
-
-      const result = await res.json();
-
-      // Handle case where no crops found
-      if (result.recommended_crops) {
-        document.getElementById("result").innerHTML =
-          `<div class='card'>
-            <h3>Recommended Crops</h3>
-            <p>${result.recommended_crops.join(", ")}</p>
-            <p><strong>Reason:</strong> ${result.reason}</p>
-          </div>`;
-      } else {
-        document.getElementById("result").innerHTML =
-          `<div class='card'><p>${result.message}</p></div>`;
-      }
-    } catch (err) {
-      console.error("Error:", err);
-      document.getElementById("result").innerHTML =
-        `<div class='card'><p>❌ Could not fetch recommendation. Check backend console.</p></div>`;
-    }
-  });
-</script>
-
+    });
+  </script>
 </body>
 </html>
