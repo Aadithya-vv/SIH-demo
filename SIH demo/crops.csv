@@ -1,0 +1,7 @@
+crop,soil_type,min_rainfall,max_rainfall,min_ph,max_ph,season
+Rice,Clay,1000,2000,5.5,7.0,Kharif
+Wheat,Loamy,500,1200,6.0,7.5,Rabi
+Maize,Loamy,600,1200,5.5,7.5,Kharif
+Soybean,Loamy,800,1500,6.0,7.5,Kharif
+Pigeon Pea,Sandy Loam,600,1000,6.0,7.5,Kharif
+Groundnut,Sandy,500,1000,6.0,7.5,Kharif

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Crop Recommendation Prototype</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    .card { border: 1px solid #ccc; padding: 20px; border-radius: 8px; margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h1>🌾 AI-based Crop Recommendation</h1>
+
+  <form id="cropForm">
+    <label>Soil Type:
+      <select id="soil_type">
+        <option>Loamy</option>
+        <option>Clay</option>
+        <option>Sandy</option>
+        <option>Sandy Loam</option>
+      </select>
+    </label><br><br>
+
+    <label>Rainfall (mm): <input type="number" id="rainfall" required></label><br><br>
+    <label>Soil pH: <input type="number" step="0.1" id="ph" required></label><br><br>
+    <label>Season:
+      <select id="season">
+        <option>Kharif</option>
+        <option>Rabi</option>
+      </select>
+    </label><br><br>
+
+    <button type="submit">Get Recommendation</button>
+  </form>
+
+  <div id="result"></div>
+
+<script>
+  document.getElementById("cropForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const data = {
+      soil_type: document.getElementById("soil_type").value,
+      rainfall: parseFloat(document.getElementById("rainfall").value),
+      ph: parseFloat(document.getElementById("ph").value),
+      season: document.getElementById("season").value
+    };
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      if (!res.ok) {
+        throw new Error(`Server error: ${res.status}`);
+      }
+
+      const result = await res.json();
+
+      // Handle case where no crops found
+      if (result.recommended_crops) {
+        document.getElementById("result").innerHTML =
+          `<div class='card'>
+            <h3>Recommended Crops</h3>
+            <p>${result.recommended_crops.join(", ")}</p>
+            <p><strong>Reason:</strong> ${result.reason}</p>
+          </div>`;
+      } else {
+        document.getElementById("result").innerHTML =
+          `<div class='card'><p>${result.message}</p></div>`;
+      }
+    } catch (err) {
+      console.error("Error:", err);
+      document.getElementById("result").innerHTML =
+        `<div class='card'><p>❌ Could not fetch recommendation. Check backend console.</p></div>`;
+    }
+  });
+</script>
+
+</body>
+</html>
